@@ -1,5 +1,14 @@
 import { NextResponse } from "next/server"
 
+export function GET() {
+  return new Response(JSON.stringify({ message: "API is reachable" }), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+}
+
 export async function POST(req) {
   try {
     const { code, redirectUri } = await req.json()

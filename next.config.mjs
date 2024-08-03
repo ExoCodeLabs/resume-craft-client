@@ -1,4 +1,10 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {};
+// next.config.js
 
-export default nextConfig;
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    serverComponentsExternalPackages: ["pdf-parse"], // Treat pdf-parse as a server-side package
+  },
+}
+
+export default nextConfig

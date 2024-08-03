@@ -1,36 +1,41 @@
-// app/api/parse-pdf/route.js
-
 import pdfParse from "pdf-parse"
+import { NextResponse } from "next/server"
 
-export const config = {
-  api: {
-    bodyParser: false, // Disable default body parsing for custom handling
-  },
+export function GET() {
+  return new Response(JSON.stringify({ message: "API is reachable" }), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
 }
 
 export async function POST(req) {
   try {
+    // Convert the request to a buffer for `pdf-parse`
     const buffer = await req.arrayBuffer()
-    const pdfData = await pdfParse(Buffer.from(buffer))
+    const fileBuffer = Buffer.from(buffer)
+
+    // Parse the PDF file
+    const pdfData = await pdfParse(fileBuffer)
+
+    // Extract and structure data from PDF
     const parsedData = parseResumeData(pdfData.text)
 
-    return new Response(JSON.stringify(parsedData), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
+    // Return a JSON response with the parsed data
+    return NextResponse.json(parsedData, { status: 200 })
   } catch (error) {
     console.error("Error parsing PDF:", error)
-    return new Response(JSON.stringify({ message: "Error parsing PDF" }), {
-      status: 500,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
+
+    // Return an error response in case of any issues
+    return NextResponse.json(
+      { error: "Internal Server Error", details: error.message },
+      { status: 500 }
+    )
   }
 }
 
+// Function to parse the resume data text
 function parseResumeData(text) {
   const lines = text
     .split("\n")
