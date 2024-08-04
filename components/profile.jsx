@@ -109,9 +109,7 @@ export function Profile() {
               </div>
             </div>
           </div>
-          <div className="flex justify-center">
-            <ResumeReader />
-          </div>
+          <div className="flex justify-center">{/* <ResumeReader /> */}</div>
         </div>
       </div>
     </div>

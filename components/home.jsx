@@ -1,5 +1,8 @@
 /* eslint-disable react/no-unescaped-entities */
+"use client"
 import Link from "next/link"
+import { useFormik } from "formik" // Import Formik
+import * as Yup from "yup" // Import Yup for validation
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -21,8 +24,85 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
+import { useState } from "react"
+import { ParseApiResponse } from "@/lib/utils"
+
+// Define validation schema using Yup
+const validationSchema = Yup.object({
+  jobTitle: Yup.string()
+    .min(3, "Job title must be at least 3 characters")
+    .required("Job title is required"),
+  jobDescription: Yup.string()
+    .min(10, "Job description must be at least 10 characters")
+    .required("Job description is required"),
+})
 
 export function Home() {
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [aiResponse, setAiResponse] = useState("")
+  // Initialize Formik
+  const formik = useFormik({
+    initialValues: {
+      jobTitle: "",
+      jobDescription: "",
+    },
+    validationSchema, // Add validation schema to Formik
+    onSubmit: async ({ jobTitle, jobDescription }) => {
+      if (!selectedFile) {
+        alert("Please select a PDF file first.")
+        return
+      }
+      const fileBuffer = await selectedFile.arrayBuffer()
+      try {
+        const parsedFile = await fetch("/api/parse-pdf", {
+          method: "POST",
+          body: fileBuffer,
+          headers: {
+            "Content-Type": "application/octet-stream",
+          },
+        })
+
+        if (!parsedFile.ok) {
+          throw new Error("Failed to parse PDF")
+        }
+
+        const resumeText = await parsedFile.json()
+
+        const response = await fetch("/api/generate-resume", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            jobTitle,
+            jobDescription,
+            resumeText,
+          }),
+        })
+
+        setAiResponse(await response.json())
+      } catch (error) {
+        console.error("Error uploading file:", error)
+      }
+    },
+  })
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0]
+    if (file && file.type === "application/pdf") {
+      setSelectedFile(file)
+    } else {
+      alert("Please select a PDF file.")
+    }
+  }
+
+  const handleButtonClick = () => {
+    document.getElementById("fileInput").click()
+  }
+
+  const { resume, cover_letter: coverLetter } = aiResponse
+
+  console.log({ resume, coverLetter })
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="flex h-16 items-center justify-between border-b bg-background px-6">
@@ -90,164 +170,193 @@ export function Home() {
       <main className="flex-1 px-6 py-8 md:px-10 lg:px-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 items-start">
           <Card className="col-span-1 md:col-span-2 lg:col-span-1">
-            <CardHeader>
-              <CardTitle>Paste Job Description</CardTitle>
-              <CardDescription>
-                Enter the job description you want to tailor your resume for.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-2">
-                <Input placeholder="Enter job title" className="w-full" />
-                <Textarea
-                  placeholder="Paste job description here..."
-                  className="h-[200px] w-full resize-none"
+            <form onSubmit={formik.handleSubmit}>
+              {" "}
+              {/* Use Formik's handleSubmit */}
+              <CardHeader>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  id="fileInput"
+                  style={{ display: "none" }}
+                  onChange={handleFileChange}
                 />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button>Generate Resume</Button>
-            </CardFooter>
-          </Card>
-          <Card className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col">
-            <CardHeader>
-              <CardTitle>Resume Preview</CardTitle>
-              <CardDescription>
-                This is your generated resume based on the job description.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1">
-              <div className="grid gap-4">
-                <div className="grid gap-1">
-                  <div className="text-lg font-bold">John Doe</div>
-                  <div className="text-sm text-muted-foreground">
-                    Software Engineer
-                  </div>
-                </div>
-                <Separator />
+
+                {/* Consolidated button for file selection and upload */}
+                <Button
+                  component="span"
+                  className="w-full"
+                  onClick={handleButtonClick}
+                >
+                  <UploadIcon className="mr-2 h-5 w-5" />
+                  {selectedFile ? selectedFile.name : "Upload LinkedIn Profile"}
+                </Button>
+              </CardHeader>
+              <CardHeader>
+                <CardTitle>Paste Job Description</CardTitle>
+                <CardDescription>
+                  Enter the job description you want to tailor your resume for.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="grid gap-2">
-                  <div className="text-sm font-semibold">Experience</div>
-                  <div className="grid gap-2">
+                  <Input
+                    name="jobTitle"
+                    placeholder="Enter job title"
+                    className={`w-full ${
+                      formik.touched.jobTitle && formik.errors.jobTitle
+                        ? "border-red-500"
+                        : ""
+                    }`}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur} // Mark the field as touched
+                    value={formik.values.jobTitle} // Bind to Formik
+                  />
+                  {formik.touched.jobTitle && formik.errors.jobTitle ? (
+                    <div className="text-red-500 text-sm">
+                      {formik.errors.jobTitle}
+                    </div>
+                  ) : null}
+                  <Textarea
+                    name="jobDescription"
+                    placeholder="Paste job description here..."
+                    className={`h-[200px] w-full resize-none ${
+                      formik.touched.jobDescription &&
+                      formik.errors.jobDescription
+                        ? "border-red-500"
+                        : ""
+                    }`}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur} // Mark the field as touched
+                    value={formik.values.jobDescription} // Bind to Formik
+                  />
+                  {formik.touched.jobDescription &&
+                  formik.errors.jobDescription ? (
+                    <div className="text-red-500 text-sm">
+                      {formik.errors.jobDescription}
+                    </div>
+                  ) : null}
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={formik.isSubmitting || !formik.isValid}
+                >
+                  Generate Resume
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+          {resume && coverLetter ? (
+            <>
+              {" "}
+              <Card className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col">
+                <CardHeader>
+                  <CardTitle>Resume Preview</CardTitle>
+                  <CardDescription>
+                    This is your generated resume based on the job description.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <div className="grid gap-4">
+                    <div className="grid gap-1">
+                      <div className="text-lg font-bold">{resume.name}</div>
+                      <div className="text-md text-muted-foreground">
+                        {resume.title}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {resume.contact.email}| {resume.contact.github} |
+                        {resume.contact.phone} | {resume.contact.linkedin}
+                      </div>
+                    </div>
+                    <Separator />
+                    <div className="grid gap-2">
+                      <div className="text-sm font-semibold">Experience</div>
+                      <div className="grid gap-2">
+                        {resume.experience.map((job, index) => (
+                          <div key={index} className="grid gap-1">
+                            <div className="text-base font-medium">
+                              {job.title}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {job.company} | {job.dates}
+                            </div>
+                            <div className="text-sm">{job.description}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <div className="text-sm font-semibold">Education</div>
+                      {resume.education.map((edu, index) => (
+                        <div key={index} className="grid gap-1">
+                          <div className="text-base font-medium">
+                            {edu.degree} in {edu.major}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {edu.school} | {edu.dates}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid gap-2">
+                      <div className="text-sm font-semibold">Skills</div>
+                      <div className="flex flex-wrap gap-2">
+                        {resume.skills.map((skill, index) => (
+                          <Badge key={index} variant="outline">
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <Button variant="outline">Download Resume</Button>
+                </CardFooter>
+              </Card>
+              <Card className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col">
+                <CardHeader>
+                  <CardTitle>Cover Letter Preview</CardTitle>
+                  <CardDescription>
+                    This is your generated cover letter based on the job
+                    description.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <div className="grid gap-4">
+                    <div className="grid gap-1">
+                      <div className="text-lg font-bold">
+                        {coverLetter.header}
+                      </div>
+                      <div className="text-sm">{coverLetter.intro}</div>
+                    </div>
                     <div className="grid gap-1">
                       <div className="text-base font-medium">
-                        Software Engineer
+                        Relevant Experience
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        Acme Inc. | 2019 - Present
-                      </div>
-                      <div className="text-sm">
-                        Developed and maintained web applications using React,
-                        Node.js, and MongoDB. Collaborated with cross-functional
-                        teams to deliver high-quality software. Implemented new
-                        features and optimized existing ones to improve user
-                        experience.
-                      </div>
+                      <div className="text-sm">{coverLetter.body}</div>
                     </div>
                     <div className="grid gap-1">
-                      <div className="text-base font-medium">Intern</div>
-                      <div className="text-sm text-muted-foreground">
-                        XYZ Corp. | 2018 - 2019
-                      </div>
-                      <div className="text-sm">
-                        Assisted in the development of a mobile application
-                        using React Native. Participated in code reviews and
-                        learned best practices for software development.
-                      </div>
+                      <div className="text-base font-medium">Conclusion</div>
+                      <div className="text-sm">{coverLetter.closing}</div>
+                    </div>
+                    <div className="grid gap-1">
+                      <div className="text-base font-medium">Sincerely,</div>
+                      <div className="text-lg font-bold">{resume.name}</div>
                     </div>
                   </div>
-                </div>
-                <div className="grid gap-2">
-                  <div className="text-sm font-semibold">Education</div>
-                  <div className="grid gap-1">
-                    <div className="text-base font-medium">
-                      Bachelor of Science in Computer Science
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      University of Example | 2015 - 2019
-                    </div>
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <div className="text-sm font-semibold">Skills</div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline">React</Badge>
-                    <Badge variant="outline">Node.js</Badge>
-                    <Badge variant="outline">MongoDB</Badge>
-                    <Badge variant="outline">Git</Badge>
-                    <Badge variant="outline">Agile</Badge>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline">Download Resume</Button>
-            </CardFooter>
-          </Card>
-          <Card className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col">
-            <CardHeader>
-              <CardTitle>Cover Letter Preview</CardTitle>
-              <CardDescription>
-                This is your generated cover letter based on the job
-                description.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1">
-              <div className="grid gap-4">
-                <div className="grid gap-1">
-                  <div className="text-lg font-bold">Dear Hiring Manager,</div>
-                  <div className="text-sm">
-                    I am excited to apply for the Software Engineer position at
-                    your esteemed company. With my extensive experience in web
-                    development and a strong passion for creating innovative
-                    solutions, I believe I am the ideal candidate to contribute
-                    to your team's success.
-                  </div>
-                </div>
-                <div className="grid gap-1">
-                  <div className="text-base font-medium">
-                    Relevant Experience
-                  </div>
-                  <div className="text-sm">
-                    Throughout my career, I have honed my skills in developing
-                    and maintaining web applications using cutting-edge
-                    technologies such as React, Node.js, and MongoDB. I have a
-                    proven track record of collaborating with cross-functional
-                    teams to deliver high-quality software that meets or exceeds
-                    client expectations.
-                  </div>
-                </div>
-                <div className="grid gap-1">
-                  <div className="text-base font-medium">Qualifications</div>
-                  <div className="text-sm">
-                    In addition to my technical expertise, I possess excellent
-                    problem-solving and communication skills, which have enabled
-                    me to effectively work on complex projects and communicate
-                    effectively with stakeholders. I am also a quick learner and
-                    am always eager to expand my knowledge and stay up-to-date
-                    with the latest industry trends and best practices.
-                  </div>
-                </div>
-                <div className="grid gap-1">
-                  <div className="text-base font-medium">Conclusion</div>
-                  <div className="text-sm">
-                    I am confident that my skills and experience make me an
-                    ideal candidate for this role. I am excited about the
-                    opportunity to contribute to your team and help drive the
-                    success of your organization. Thank you for your
-                    consideration, and I look forward to the opportunity to
-                    discuss my qualifications further.
-                  </div>
-                </div>
-                <div className="grid gap-1">
-                  <div className="text-base font-medium">Sincerely,</div>
-                  <div className="text-lg font-bold">John Doe</div>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline">Download Cover Letter</Button>
-            </CardFooter>
-          </Card>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <Button variant="outline">Download Cover Letter</Button>
+                </CardFooter>
+              </Card>
+            </>
+          ) : (
+            <></>
+          )}
         </div>
       </main>
       <footer className="flex items-center justify-between border-t bg-background px-6 py-4">
@@ -278,7 +387,7 @@ function MountainIcon(props) {
   )
 }
 
-function XIcon(props) {
+function UploadIcon(props) {
   return (
     <svg
       {...props}
@@ -292,8 +401,9 @@ function XIcon(props) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="17 8 12 3 7 8" />
+      <line x1="12" x2="12" y1="3" y2="15" />
     </svg>
   )
 }
