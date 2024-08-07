@@ -26,6 +26,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { useState } from "react"
 import { ParseApiResponse } from "@/lib/utils"
+import { Loading } from "./loading"
 
 // Define validation schema using Yup
 const validationSchema = Yup.object({
@@ -39,7 +40,44 @@ const validationSchema = Yup.object({
 
 export function Home() {
   const [selectedFile, setSelectedFile] = useState(null)
-  const [aiResponse, setAiResponse] = useState("")
+  const [isLoading, setisLoading] = useState(false)
+  const [aiResponse, setAiResponse] = useState({
+    resume: {
+      name: "",
+      job_title: "",
+      location: "",
+      contact: {
+        phone: "",
+        email: "",
+        linkedin: "",
+        github: "",
+      },
+      skills: [],
+      experience: [
+        {
+          title: "",
+          company: "",
+          location: "",
+          dates: "",
+          description: "",
+        },
+      ],
+      education: [
+        {
+          degree: "",
+          major: "",
+          school: "",
+          dates: "",
+        },
+      ],
+    },
+    cover_letter: {
+      header: "",
+      intro: "",
+      body: "",
+      closing: "",
+    },
+  })
   // Initialize Formik
   const formik = useFormik({
     initialValues: {
@@ -52,6 +90,7 @@ export function Home() {
         alert("Please select a PDF file first.")
         return
       }
+      setisLoading(true)
       const fileBuffer = await selectedFile.arrayBuffer()
       try {
         const parsedFile = await fetch("/api/parse-pdf", {
@@ -81,7 +120,9 @@ export function Home() {
         })
 
         setAiResponse(await response.json())
+        setisLoading(false)
       } catch (error) {
+        setisLoading(false)
         console.error("Error uploading file:", error)
       }
     },
@@ -102,7 +143,6 @@ export function Home() {
 
   const { resume, cover_letter: coverLetter } = aiResponse
 
-  console.log({ resume, coverLetter })
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="flex h-16 items-center justify-between border-b bg-background px-6">
@@ -139,7 +179,7 @@ export function Home() {
         </div>
       </header>
       <section className="w-full py-12 md:py-24 lg:py-32 bg-primary text-primary-foreground">
-        <div className="container grid items-center justify-center gap-4 px-4 text-center md:px-6 lg:gap-10">
+        <div className="grid w-full items-center justify-center gap-4 px-4 text-center md:px-6 lg:gap-10">
           <div className="space-y-3">
             <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
               Craft Your Perfect Resume with AI
@@ -151,25 +191,29 @@ export function Home() {
           </div>
           <div className="flex flex-col gap-2 min-[400px]:flex-row justify-center">
             <Link
-              href="#"
+              href="#resume_upload"
               className="inline-flex h-10 items-center justify-center rounded-md bg-primary-foreground px-8 text-sm font-medium text-primary shadow transition-colors hover:bg-primary-foreground/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
               prefetch={false}
             >
               Get Started
             </Link>
             <Link
-              href="#"
-              className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-8 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+              href="https://www.linkedin.com/help/linkedin/answer/a541960"
+              className="inline-flex h-10 items-center justify-center rounded-md bg-primary-foreground px-8 text-sm font-medium text-primary shadow transition-colors hover:bg-primary-foreground/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
               prefetch={false}
+              target="_blank"
             >
-              Learn More
+              Learn how to save linkedIn profile?
             </Link>
           </div>
         </div>
       </section>
       <main className="flex-1 px-6 py-8 md:px-10 lg:px-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 items-start">
-          <Card className="col-span-1 md:col-span-2 lg:col-span-1">
+          <Card
+            className="col-span-1 md:col-span-2 lg:col-span-1"
+            id="resume_upload"
+          >
             <form onSubmit={formik.handleSubmit}>
               {" "}
               {/* Use Formik's handleSubmit */}
@@ -249,113 +293,168 @@ export function Home() {
               </CardFooter>
             </form>
           </Card>
-          {resume && coverLetter ? (
+          {!isLoading ? (
             <>
-              {" "}
-              <Card className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col">
-                <CardHeader>
-                  <CardTitle>Resume Preview</CardTitle>
-                  <CardDescription>
-                    This is your generated resume based on the job description.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="grid gap-4">
-                    <div className="grid gap-1">
-                      <div className="text-lg font-bold">{resume.name}</div>
-                      <div className="text-md text-muted-foreground">
-                        {resume.title}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {resume.contact.email}| {resume.contact.github} |
-                        {resume.contact.phone} | {resume.contact.linkedin}
-                      </div>
+              {!resume.name ? (
+                <Card className="col-span-1">
+                  <CardHeader>
+                    <CardTitle>Job Description</CardTitle>
+                    <CardDescription>
+                      The job description you provided will be available here.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col items-center justify-center h-[300px] bg-muted rounded-md">
+                      <img
+                        src="/placeholder.svg"
+                        width={200}
+                        height={200}
+                        alt="Blank Job Description"
+                        className="mb-4"
+                        style={{ aspectRatio: "200/200", objectFit: "cover" }}
+                      />
+                      <p className="text-muted-foreground">
+                        Your ATS friendly resume will be available here.
+                      </p>
                     </div>
-                    <Separator />
-                    <div className="grid gap-2">
-                      <div className="text-sm font-semibold">Experience</div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col">
+                  <CardHeader>
+                    <CardTitle>Resume Preview</CardTitle>
+                    <CardDescription>
+                      This is your generated resume based on the job
+                      description.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1">
+                    <div className="grid gap-4">
+                      <div className="grid gap-1">
+                        <div className="text-lg font-bold">{resume.name}</div>
+                        <div className="text-md text-muted-foreground">
+                          {resume.title}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {resume.contact.email}| {resume.contact.github} |
+                          {resume.contact.phone} | {resume.contact.linkedin}
+                        </div>
+                      </div>
+                      <Separator />
                       <div className="grid gap-2">
-                        {resume.experience.map((job, index) => (
+                        <div className="text-sm font-semibold">Experience</div>
+                        <div className="grid gap-2">
+                          {resume.experience.map((job, index) => (
+                            <div key={index} className="grid gap-1">
+                              <div className="text-base font-medium">
+                                {job.title}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {job.company} | {job.dates}
+                              </div>
+                              <div className="text-sm">{job.description}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <div className="text-sm font-semibold">Education</div>
+                        {resume.education.map((edu, index) => (
                           <div key={index} className="grid gap-1">
                             <div className="text-base font-medium">
-                              {job.title}
+                              {edu.degree} in {edu.major}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              {job.company} | {job.dates}
+                              {edu.school} | {edu.dates}
                             </div>
-                            <div className="text-sm">{job.description}</div>
                           </div>
                         ))}
                       </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <div className="text-sm font-semibold">Education</div>
-                      {resume.education.map((edu, index) => (
-                        <div key={index} className="grid gap-1">
-                          <div className="text-base font-medium">
-                            {edu.degree} in {edu.major}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {edu.school} | {edu.dates}
-                          </div>
+                      <div className="grid gap-2">
+                        <div className="text-sm font-semibold">Skills</div>
+                        <div className="flex flex-wrap gap-2">
+                          {resume.skills.map((skill, index) => (
+                            <Badge key={index} variant="outline">
+                              {skill}
+                            </Badge>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                    <div className="grid gap-2">
-                      <div className="text-sm font-semibold">Skills</div>
-                      <div className="flex flex-wrap gap-2">
-                        {resume.skills.map((skill, index) => (
-                          <Badge key={index} variant="outline">
-                            {skill}
-                          </Badge>
-                        ))}
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Button variant="outline">Download Resume</Button>
-                </CardFooter>
-              </Card>
-              <Card className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col">
-                <CardHeader>
-                  <CardTitle>Cover Letter Preview</CardTitle>
-                  <CardDescription>
-                    This is your generated cover letter based on the job
-                    description.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="grid gap-4">
-                    <div className="grid gap-1">
-                      <div className="text-lg font-bold">
-                        {coverLetter.header}
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline">Download Resume</Button>
+                  </CardFooter>
+                </Card>
+              )}
+              {!coverLetter.header ? (
+                <Card className="col-span-1">
+                  <CardHeader>
+                    <CardTitle>Job Description</CardTitle>
+                    <CardDescription>
+                      The job description you provided will be available here.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col items-center justify-center h-[300px] bg-muted rounded-md">
+                      <img
+                        src="/placeholder.svg"
+                        width={200}
+                        height={200}
+                        alt="Blank Job Description"
+                        className="mb-4"
+                        style={{ aspectRatio: "200/200", objectFit: "cover" }}
+                      />
+                      <p className="text-muted-foreground">
+                        Your cover letter will be available here.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col">
+                  <CardHeader>
+                    <CardTitle>Cover Letter Preview</CardTitle>
+                    <CardDescription>
+                      This is your generated cover letter based on the job
+                      description.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1">
+                    <div className="grid gap-4">
+                      <div className="grid gap-1">
+                        <div className="text-lg font-bold">
+                          {coverLetter.header}
+                        </div>
+                        <div className="text-sm">{coverLetter.intro}</div>
                       </div>
-                      <div className="text-sm">{coverLetter.intro}</div>
-                    </div>
-                    <div className="grid gap-1">
-                      <div className="text-base font-medium">
-                        Relevant Experience
+                      <div className="grid gap-1">
+                        <div className="text-base font-medium">
+                          Relevant Experience
+                        </div>
+                        <div className="text-sm">{coverLetter.body}</div>
                       </div>
-                      <div className="text-sm">{coverLetter.body}</div>
+                      <div className="grid gap-1">
+                        <div className="text-base font-medium">Conclusion</div>
+                        <div className="text-sm">{coverLetter.closing}</div>
+                      </div>
+                      <div className="grid gap-1">
+                        <div className="text-base font-medium">Sincerely,</div>
+                        <div className="text-lg font-bold">{resume.name}</div>
+                      </div>
                     </div>
-                    <div className="grid gap-1">
-                      <div className="text-base font-medium">Conclusion</div>
-                      <div className="text-sm">{coverLetter.closing}</div>
-                    </div>
-                    <div className="grid gap-1">
-                      <div className="text-base font-medium">Sincerely,</div>
-                      <div className="text-lg font-bold">{resume.name}</div>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Button variant="outline">Download Cover Letter</Button>
-                </CardFooter>
-              </Card>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline">Download Cover Letter</Button>
+                  </CardFooter>
+                </Card>
+              )}
             </>
           ) : (
-            <></>
+            <>
+              <Loading />
+              <Loading />
+            </>
           )}
         </div>
       </main>

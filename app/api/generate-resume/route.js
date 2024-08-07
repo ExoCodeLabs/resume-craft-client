@@ -1,45 +1,6 @@
 import axios from "axios"
 import { NextResponse } from "next/server"
 
-// Define the initial state format
-const initialState = {
-  resume: {
-    name: "",
-    job_title: "",
-    location: "",
-    contact: {
-      phone: "",
-      email: "",
-      linkedin: "",
-      github: "",
-    },
-    skills: [],
-    experience: [
-      {
-        title: "",
-        company: "",
-        location: "",
-        dates: "",
-        description: "",
-      },
-    ],
-    education: [
-      {
-        degree: "",
-        major: "",
-        school: "",
-        dates: "",
-      },
-    ],
-  },
-  cover_letter: {
-    header: "",
-    intro: "",
-    body: "",
-    closing: "",
-  },
-}
-
 // POST method to handle API requests
 export async function POST(req) {
   try {
