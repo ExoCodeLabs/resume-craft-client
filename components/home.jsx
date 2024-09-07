@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge"
 import { useState } from "react"
 import { ParseApiResponse } from "@/lib/utils"
 import { Loading } from "./loading"
+import DocDownloader from "@/lib/generateDocFile"
 
 // Define validation schema using Yup
 const validationSchema = Yup.object({
@@ -147,10 +148,10 @@ export function Home() {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="flex h-16 items-center justify-between border-b bg-background px-6">
         <Link href="#" prefetch={false}>
-          <MountainIcon className="h-6 w-6" />
+          {/* <MountainIcon className="h-6 w-6" /> */}
           <span className="sr-only">ResumeCraft-AI</span>
         </Link>
-        <div className="flex items-center gap-4">
+        {/* <div className="flex items-center gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -176,7 +177,7 @@ export function Home() {
               <DropdownMenuItem>Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
+        </div> */}
       </header>
       <section className="w-full py-12 md:py-24 lg:py-32 bg-primary text-primary-foreground">
         <div className="grid w-full items-center justify-center gap-4 px-4 text-center md:px-6 lg:gap-10">
@@ -284,9 +285,10 @@ export function Home() {
               </CardContent>
               <CardFooter>
                 <Button
-                  type="submit"
+                  // type="submit"
                   className="w-full"
                   disabled={formik.isSubmitting || !formik.isValid}
+                  onClick={() => DocDownloader()}
                 >
                   Generate Resume
                 </Button>
@@ -296,15 +298,15 @@ export function Home() {
           {!isLoading ? (
             <>
               {!resume.name ? (
-                <Card className="col-span-1">
+                <Card className="col-span-1 mi">
                   <CardHeader>
-                    <CardTitle>Job Description</CardTitle>
+                    {/* <CardTitle>Job Description</CardTitle>
                     <CardDescription>
                       The job description you provided will be available here.
-                    </CardDescription>
+                    </CardDescription> */}
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-col items-center justify-center h-[300px] bg-muted rounded-md">
+                    <div className="flex flex-col items-center justify-center h-[300px] bg-muted rounded-md min-h-[456px]">
                       <img
                         src="/placeholder.svg"
                         width={200}
@@ -383,20 +385,22 @@ export function Home() {
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between">
-                    <Button variant="outline">Download Resume</Button>
+                    <Button variant="outline" onClick={() => DocDownloader()}>
+                      Download Resume
+                    </Button>
                   </CardFooter>
                 </Card>
               )}
               {!coverLetter.header ? (
                 <Card className="col-span-1">
                   <CardHeader>
-                    <CardTitle>Job Description</CardTitle>
+                    {/* <CardTitle>Job Description</CardTitle>
                     <CardDescription>
                       The job description you provided will be available here.
-                    </CardDescription>
+                    </CardDescription> */}
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-col items-center justify-center h-[300px] bg-muted rounded-md">
+                    <div className="flex flex-col items-center justify-center h-[300px] bg-muted rounded-md min-h-[456px]">
                       <img
                         src="/placeholder.svg"
                         width={200}
