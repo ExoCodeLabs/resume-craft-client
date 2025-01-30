@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { GenerateResumeDoc } from "@/lib/generateDocFile"
 
 const ResumePreviewCard = ({ resume }) => {
   return (
@@ -71,7 +72,7 @@ const ResumePreviewCard = ({ resume }) => {
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={() => DocDownloader()}>
+        <Button variant="outline" onClick={() => GenerateResumeDoc(resume)}>
           Download Resume
         </Button>
       </CardFooter>
