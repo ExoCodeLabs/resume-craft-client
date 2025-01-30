@@ -48,6 +48,7 @@ async function chatGPT(jobTitle, jobDescription, resumeText) {
           "name": "",
           "job_title": "",
           "location": "",
+          "objective": "",
           "contact": {
             "phone": "",
             "email": "",
@@ -145,6 +146,7 @@ function validateResponseFormat(response) {
     const isValidResume =
       typeof resume.name === "string" &&
       typeof resume.job_title === "string" &&
+      typeof resume.objective === "string" &&
       typeof resume.location === "string" &&
       typeof resume.contact.phone === "string" &&
       typeof resume.contact.email === "string" &&
