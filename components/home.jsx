@@ -20,7 +20,7 @@ const validationSchema = Yup.object({
     .required("Job description is required"),
 })
 
-export function Home() {
+function Home() {
   const [selectedFile, setSelectedFile] = useState(null)
   const [isLoading, setisLoading] = useState(false)
   const [aiResponse, setAiResponse] = useState({
@@ -155,3 +155,4 @@ export function Home() {
     </div>
   )
 }
+export default Home
