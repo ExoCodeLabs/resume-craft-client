@@ -7,8 +7,6 @@ export async function POST(req) {
     // Parse the JSON body from the request
     const { name, title, experience, education, skills } = await req.json()
 
-    console.log({ name, title, experience, education, skills })
-
     // Create the document
     const doc = new Document({
       sections: [
