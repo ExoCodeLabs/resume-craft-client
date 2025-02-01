@@ -2,7 +2,7 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  basePath: "/resume-craft-client",
+  basePath: "/resumecraft-ai.github.io",
   output: "export",
   reactStrictMode: true,
   experimental: {
