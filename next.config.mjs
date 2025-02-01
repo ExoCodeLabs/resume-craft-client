@@ -2,7 +2,6 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  basePath: "/resumecraft-ai.github.io",
   output: "export",
   reactStrictMode: true,
   experimental: {
