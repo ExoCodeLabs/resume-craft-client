@@ -2,6 +2,9 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  basePath: "/resume-craft-client",
+  output: "out",
+  reactStrictMode: true,
   experimental: {
     serverComponentsExternalPackages: ["pdf-parse", "fs"], // Treat pdf-parse as a server-side package
   },
